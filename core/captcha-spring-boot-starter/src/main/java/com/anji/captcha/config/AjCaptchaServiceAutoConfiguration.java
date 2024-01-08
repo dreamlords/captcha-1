@@ -3,6 +3,7 @@ package com.anji.captcha.config;
 
 import com.anji.captcha.model.common.Const;
 import com.anji.captcha.properties.AjCaptchaProperties;
+import com.anji.captcha.service.CaptchaCacheService;
 import com.anji.captcha.service.CaptchaService;
 import com.anji.captcha.service.impl.CaptchaServiceFactory;
 import com.anji.captcha.util.ImageUtils;
@@ -19,6 +20,7 @@ import org.springframework.util.Base64Utils;
 import org.springframework.util.FileCopyUtils;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -29,7 +31,7 @@ public class AjCaptchaServiceAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public CaptchaService captchaService(AjCaptchaProperties prop) {
+    public CaptchaService captchaService(AjCaptchaProperties prop, List<CaptchaCacheService> captchaCacheServiceList) {
         logger.info("自定义配置项：{}", prop.toString());
         Properties config = new Properties();
         config.put(Const.CAPTCHA_CACHETYPE, prop.getCacheType().name());
@@ -65,6 +67,10 @@ public class AjCaptchaServiceAutoConfiguration {
             initializeBaseMap(prop.getJigsaw(), prop.getPicClick());
         }
         CaptchaService s = CaptchaServiceFactory.getInstance(config);
+        //使springboot可以通过注入bena加载相关CaptchaCacheService
+        for (CaptchaCacheService captchaCacheService : captchaCacheServiceList) {
+            CaptchaServiceFactory.cacheService.putIfAbsent(captchaCacheService.type(), captchaCacheService);
+        }
         return s;
     }
 
